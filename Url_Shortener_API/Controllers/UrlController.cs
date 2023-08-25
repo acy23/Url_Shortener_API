@@ -42,17 +42,32 @@ namespace Url_Shortener_API.Controllers
             return NotFound("Url could not found");
         }
 
-        [HttpGet("pick-custom-short-url")]
-        public async Task<ActionResult<PickCustomShortUrlResponse>> PickCustomShortUrl([FromQuery] PickCustomShortUrlRequest request)
+        [HttpGet("get-short-url")]
+        public async Task<ActionResult<ShortUrlResponse>> GetShortUrl([FromQuery] ShortUrlRequest request)
         {
             var originalUrl = await _service.GetShortUrl(request.Url);
             if (originalUrl.HasValue)
             {
-                return Ok(new PickCustomShortUrlResponse { ShortUrl = originalUrl.Value });
+                return Ok(new ShortUrlResponse { ShortUrl = originalUrl.Value });
             }
 
             return NotFound("Custom short url could not found");
-        } 
+        }
 
+        [HttpPost("pick-custom-short-url")]
+        public async Task<ActionResult<PickCustomShortUrlResponse>> PickCustomShortUrl([FromBody] PickCustomShortUrlRequest request)
+        {
+            var response = await _service.PickCustomShortUrl(request.OriginalUrl, request.CustomShortUrlHashedPortion);
+            if (response.HasValue)
+            {
+                return Ok(new PickCustomShortUrlResponse
+                {
+                    ShortUrl = response.Value
+                });
+            }
+
+            return StatusCode(403, "Error encountered while processing your request.");
+        }
     }
+    
 }

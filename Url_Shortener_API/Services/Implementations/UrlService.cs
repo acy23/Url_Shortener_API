@@ -19,14 +19,15 @@ namespace Url_Shortener_API.Services.Implementations
 
         public async Task<ServiceResult<string>> CreateShortenUrl(string url)
         {
+            var hashedPortion = GenerateRandomString(6);
 
-            var isSameUrlExist = await _mongoService.IsSameUrlExistAsync(url);
-            if (isSameUrlExist)
+            var isSameUrlExist = await _mongoService.IsOriginalUrlExistAsync(url);
+            var isHashedPortionExist = await _mongoService.IsShortUrlHashedPortionExistAsync(hashedPortion);
+            if (isSameUrlExist || isHashedPortionExist)
             {
                 return new ServiceResult<string>();
             }
 
-            var hashedPortion = GenerateRandomString(6);
             var entity = new UrlMapping
             {
                 OriginalUrl = url,
@@ -43,7 +44,6 @@ namespace Url_Shortener_API.Services.Implementations
                 _logger.LogError(ex, ex.Message);
                 throw; // I do not throw ex to hide stack trace.
             }
-
         }
 
         public async Task<ServiceResult<string>> GetOriginalUrl(string shortUrl)
@@ -54,7 +54,7 @@ namespace Url_Shortener_API.Services.Implementations
                 return new ServiceResult<string>();
             }
 
-            var urlMapping = await _mongoService.GetOriginalUrl(hashedPortion);
+            var urlMapping = await _mongoService.GetMappingByShortUrl(hashedPortion);
             if (urlMapping.HasValue)
             {
                 return new ServiceResult<string>(urlMapping.Value.OriginalUrl);
@@ -64,7 +64,7 @@ namespace Url_Shortener_API.Services.Implementations
         }
         public async Task<ServiceResult<string>> GetShortUrl(string url)
         {
-            var urlMapping = await _mongoService.GetShortUrl(url);
+            var urlMapping = await _mongoService.GetMappingByOriginalUrl(url);
             if(urlMapping.HasValue)
             {
                 var fullShortUrl = $"{UrlBase}{urlMapping.Value.ShortUrlHash}";
@@ -72,6 +72,34 @@ namespace Url_Shortener_API.Services.Implementations
             }
 
             return new ServiceResult<string>();
+        }
+
+        public async Task<ServiceResult<string>> PickCustomShortUrl(string url, string shortUrlHashedPortion)
+        {
+            var isOriginalUrlExist = await _mongoService.IsOriginalUrlExistAsync(url);
+            var isShortUrlHashedPortionExist = await _mongoService.IsShortUrlHashedPortionExistAsync(shortUrlHashedPortion);
+
+            if(isOriginalUrlExist || isShortUrlHashedPortionExist)
+            {
+                return new ServiceResult<string>();
+            }
+
+            var entity = new UrlMapping
+            {
+                ShortUrlHash = shortUrlHashedPortion,
+                OriginalUrl = url,
+            };
+
+            try
+            {
+                await _mongoService.CreateAsync(entity);
+                return new ServiceResult<string>($"{UrlBase}{shortUrlHashedPortion}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                throw;
+            }
         }
 
         private string GenerateRandomString(int length)
@@ -94,6 +122,5 @@ namespace Url_Shortener_API.Services.Implementations
 
             return null; 
         }
-
     }
 }

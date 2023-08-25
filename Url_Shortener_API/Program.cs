@@ -27,14 +27,15 @@ internal class Program
         builder.Services.AddFluentValidation(fluentValidation => fluentValidation.RegisterValidatorsFromAssemblyContaining<Program>(lifetime: ServiceLifetime.Singleton));
 
         //CORS
-        builder.Services.AddCors(policyBuilder =>
-            policyBuilder.AddDefaultPolicy(policy =>
-                policy.WithOrigins("*")
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowAnyOrigin()
-            )
-        );
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAnyOrigin", builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            });
+        });
 
         var app = builder.Build();
 
@@ -49,7 +50,7 @@ internal class Program
 
         app.UseRouting();
         
-        app.UseCors();
+        app.UseCors("AllowAnyOrigin");
         
         app.UseAuthentication();
         

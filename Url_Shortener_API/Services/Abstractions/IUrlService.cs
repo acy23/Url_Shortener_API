@@ -7,6 +7,6 @@ namespace Url_Shortener_API.Services.Abstractions
         Task<ServiceResult<string>> CreateShortenUrl(string url);
         Task<ServiceResult<string>> GetOriginalUrl(string shortUrl);
         Task<ServiceResult<string>> GetShortUrl(string url);
-
+        Task<ServiceResult<string>> PickCustomShortUrl(string url, string shortUrlHashedPortion);
     }
 }

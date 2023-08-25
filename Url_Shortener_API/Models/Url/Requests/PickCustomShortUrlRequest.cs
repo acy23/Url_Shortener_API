@@ -4,16 +4,17 @@ namespace Url_Shortener_API.Models.Url.Requests
 {
     public class PickCustomShortUrlRequest
     {
-        public string Url { get; set; }
+        public string CustomShortUrlHashedPortion { get; set; }
+        public string OriginalUrl { get; set; }
     }
 
     public class PickCustomShortUrlRequestValidator : AbstractValidator<PickCustomShortUrlRequest>
     {
         public PickCustomShortUrlRequestValidator()
         {
-            RuleFor(model => model.Url).MaximumLength(255);
-
-            RuleFor(model => model.Url).NotEmpty().NotNull().WithMessage("URL is required.").Must(BeAValidUrl).WithMessage("Invalid URL format.");
+            RuleFor(model => model.OriginalUrl).MaximumLength(255);
+            RuleFor(model => model.OriginalUrl).NotEmpty().NotNull().WithMessage("URL is required.").Must(BeAValidUrl).WithMessage("Invalid URL format.");
+            RuleFor(model => model.CustomShortUrlHashedPortion).NotEmpty().NotNull().MaximumLength(6).WithMessage("Invalid custom hash portion.");
         }
 
         private bool BeAValidUrl(string url)

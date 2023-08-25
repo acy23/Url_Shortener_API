@@ -8,14 +8,10 @@ namespace Url_Shortener_API.Services.Implementations
 {
     public class MongoService : IMongoService
     {
-        private readonly IConfiguration _configuration;
         private readonly IMongoCollection<UrlMapping> _collection;
         public MongoService(
-            IOptions<Data.MongoDatabaseSettings> mongoDatabaseSettings,
-            IConfiguration configuration)
+            IOptions<Data.MongoDatabaseSettings> mongoDatabaseSettings)
         {
-            _configuration = configuration;
-
             var mongoClient = new MongoClient(
                 mongoDatabaseSettings.Value.ConnectionString);
 
@@ -23,7 +19,6 @@ namespace Url_Shortener_API.Services.Implementations
                 mongoDatabaseSettings.Value.DatabaseName);
 
             _collection = mongoDatabase.GetCollection<UrlMapping>(nameof(UrlMapping));
-
         }
 
         public async Task CreateAsync(UrlMapping entity)
@@ -31,7 +26,7 @@ namespace Url_Shortener_API.Services.Implementations
             await _collection.InsertOneAsync(entity);
         }
 
-        public async Task<ServiceResult<UrlMapping>> GetOriginalUrl(string shortUrl)
+        public async Task<ServiceResult<UrlMapping>> GetMappingByShortUrl(string shortUrl)
         {
             var urlMapping = await _collection.Find(x => x.ShortUrlHash == shortUrl && !x.IsDeleted).SingleOrDefaultAsync();
             if(urlMapping == null)
@@ -42,7 +37,7 @@ namespace Url_Shortener_API.Services.Implementations
             return new ServiceResult<UrlMapping>(urlMapping);
         }
 
-        public async Task<ServiceResult<UrlMapping>> GetShortUrl(string url)
+        public async Task<ServiceResult<UrlMapping>> GetMappingByOriginalUrl(string url)
         {
             var urlMapping = await _collection.Find(x => x.OriginalUrl == url && !x.IsDeleted).SingleOrDefaultAsync();
             if (urlMapping == null)
@@ -53,9 +48,15 @@ namespace Url_Shortener_API.Services.Implementations
             return new ServiceResult<UrlMapping>(urlMapping);
         }
 
-        public async Task<bool> IsSameUrlExistAsync(string url)
+        public async Task<bool> IsOriginalUrlExistAsync(string url)
         {
             var isUrlMappingExist = await _collection.Find(x => x.OriginalUrl == url && !x.IsDeleted).AnyAsync();
+            return isUrlMappingExist;
+        }
+
+        public async Task<bool> IsShortUrlHashedPortionExistAsync(string shortUrlHashedPortion)
+        {
+            var isUrlMappingExist = await _collection.Find(x => x.ShortUrlHash == shortUrlHashedPortion && !x.IsDeleted).AnyAsync();
             return isUrlMappingExist;
         }
     }
