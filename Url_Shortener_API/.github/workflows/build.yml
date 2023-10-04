@@ -1,0 +1,27 @@
+name: Build, Analyze, and Deploy Docker Image
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build Docker image
+      run: docker build -t url_shortener_img .
+
+    - name: Push Docker image
+      run: |
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        docker tag url_shortener_img acyildiz/Url_Shortener_API:latest
+        docker push acyildiz/Url_Shortener_API:latest
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
